@@ -1,6 +1,9 @@
 import re
     
 def build_pubmedqa_messages(question: str, contexts: list[str]):
+    """
+    Build messages for PubMedQA task. (prompt engineering)
+    """
     context_str = "\n\n".join(
         [f"Context {i + 1}:\n{c}" for i, c in enumerate(contexts)]
     )
@@ -53,6 +56,10 @@ def build_pubmedqa_messages(question: str, contexts: list[str]):
 
 
 def parse_pubmedqa_answer(response: str) -> str:
+    """
+    Parse the model response to extract the final decision (yes/no/maybe).
+    Raises ValueError if parsing fails.
+    """
     if response is None:
         raise ValueError("The model answers as empty.")
 
