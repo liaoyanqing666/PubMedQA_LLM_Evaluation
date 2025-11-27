@@ -1,3 +1,4 @@
+# Evaluation script for benchmark using vLLM
 import os
 import json
 from re import L
@@ -123,6 +124,9 @@ def eval_single_pubmedqa_json(path: str,
                               print_errors: bool = True,
                               record_file: bool = False,
                               lora_path: str | None = None):
+    """
+    Evaluate PubMedQA dataset.
+    """
     with open(path, "r", encoding="utf-8") as f:
         raw_data = json.load(f)
 

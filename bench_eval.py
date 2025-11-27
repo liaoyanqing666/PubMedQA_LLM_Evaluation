@@ -1,3 +1,4 @@
+# Evaluation script for benchmark using transformers
 import os
 import json
 import traceback
@@ -11,6 +12,9 @@ torch.backends.cuda.enable_flash_sdp(True)
 def load_model_and_tokenizer(model_path: str,
                              visible_gpus: str,
                              dtype=torch.bfloat16):
+    """
+    Load model and tokenizer.
+    """
     
     os.environ["CUDA_VISIBLE_DEVICES"] = visible_gpus
 
