@@ -3,7 +3,7 @@
 
 **English Introduction:**
 
-This project provides a convenient evaluation script that can be used to compute the scores of LLMs on the PubMedQA benchmark, supporting LoRA-fine-tuned models and MoE models. Users only need to provide the model name or a local model path to directly run the evaluation script and obtain the results. The PubMedQA dataset is already included in this project (located in `dataset/`), so no additional downloads are required. The commonly used USMLE benchmark and MCMLE benchmark are subsets of PubMedQA and can therefore be evaluated directly with this project.
+This project provides a convenient evaluation script for computing LLM performance on the PubMedQA benchmark. It supports LoRA-fine-tuned models and MoE models, and also allows generating multiple responses per question for voting (around 7 responses are recommended). Users only need to specify a model name or a local model path to run the evaluation script and obtain results. The PubMedQA dataset is already included in this project (located in `dataset/`), so no additional downloads are required. 
 
 The PubMedQA dataset originates from the [official PubMedQA repository](https://github.com/pubmedqa/pubmedqa). It consists of three subsets: PQA-L, PQA-U, and PQA-A. Among them, PQA-L is typically used as the benchmark dataset. PQA-L contains 1000 claims along with their associated contexts, and the model must determine whether each claim should be labeled as "yes", "no", or "maybe".
 
@@ -15,7 +15,7 @@ Below you will find detailed usage instructions, file descriptions, and common i
 
 **Chinese Introdution:**
 
-本项目提供了一个便捷的评测代码，可用于计算 LLM 在 PubMedQA 基准上的得分，支持 LoRA 微调后的模型与 MoE 模型。用户只需提供模型名称或本地路径，即可直接运行评测脚本并获得结果。PubMedQA 数据集已包含于本项目（位于 `dataset/`），无需额外下载。常见的 USMLE 数据集与 MCMLE 数据集均属于 PubMedQA 的子集，因此均可直接使用本项目进行评测。
+本项目提供了一个便捷的评测代码，可用于计算 LLM 在 MedQA 基准上的得分，支持 LoRA 微调后的模型与 MoE 模型，也支持生成多个回答进行投票。用户只需提供模型名称或本地路径，即可直接运行评测脚本并获得结果。PubMedQA 数据集已包含于本项目（位于 `dataset/`），无需额外下载。
 
 PubMedQA 数据集来自 [PubMedQA 官方仓库](https://github.com/pubmedqa/pubmedqa)。该项目包含 PQA-L、PQA-U 和 PQA-A 三个子数据集，其中通常仅使用 PQA-L 作为基准评测数据。PQA-L 包含 1000 条论断及其对应的参考内容，模型需要判断每条论断的结论属于 "yes"、"no" 或 "maybe"。
 
@@ -45,22 +45,33 @@ PubMedQA 数据集来自 [PubMedQA 官方仓库](https://github.com/pubmedqa/pub
 
    ```python
    if __name__ == "__main__":
-        eval_pubmedqa(
-        model_path="/nfsdata4/Qwen/Qwen3-32B", # Replace with your local model path/online model name
-        # lora_path="models/sft_Qwen3", # Optional: path to LoRA weights,
-        data_path="dataset/PubMedQA/PQA-L/ori_pqal.json",
-        visible_gpus="2",
-        print_errors=False,
-        record_file=False,
-        max_tokens=32768,
-    )
+      eval_pubmedqa(
+         model_path="/nfsdata4/Qwen/Qwen3-32B", # Replace with your local model path/online model name
+         # lora_path="models/sft_Qwen3", # Optional: path to LoRA weights,
+         data_path="dataset/PubMedQA/PQA-L/ori_pqal.json",
+         visible_gpus="2, 3",
+         max_tokens=32768, # When vote_num > 1, it is recommended to make it smaller, such as 16384.
+         print_errors=False,
+         record_file=False,
+         vote_num=1, # Whether to use multi-response voting
+         temperature=0.6, # Default: 0 if vote_num == 1 else 0.5
+         # top_p=0.95, # Optional
+         # top_k=20, # Optional
+   )
    ```
 
    The project does not currently provide an `argparse`-based command-line interface; this may be added later if demand is high. PRs are welcome.
 
 4. **(Optional) View the full model outputs**
 
-   If you set `record_file=True` in the previous step, the script will generate a file named `{original_filename}_eval_{model_name}.jsonl` in the same directory of benchmark file, containing the model's complete outputs and parsed results.
+   If you set `record_file=True` in the previous step, a file will be generated in the same directory as the benchmark dataset. The file contains the model’s full generated outputs and the corresponding parsed results.
+
+   Specifically:
+
+   * If `vote_num == 1`, the file name is
+   `{original_filename}_eval_{model_name}.jsonl`
+   * If `vote_num > 1`, the file name is
+   `{original_filename}_eval_{model_name}_{vote_num}vote.jsonl`
 
    If you want to recompute accuracy or other metrics, you can run the `jsonl_eval.py` script, set its `path` to the generated file, and run the script to obtain evaluation results.
 
@@ -69,7 +80,7 @@ PubMedQA 数据集来自 [PubMedQA 官方仓库](https://github.com/pubmedqa/pub
 
 * `bench_eval.py`: A script that evaluates models using `transformers`. It has higher compatibility but is extremely slow. (Reference speed: 32B full model, bf16, dual A800 GPUs, roughly one sample per minute)
 
-* `bench_eval_vllm.py`: A script that evaluates models using `vllm`. This is the recommended script. Currently, only this script supports evaluating LoRA-fine-tuned models. It is compatible with most popular base and fine-tuned models (such as Baichuan-m2). See the [vllm official support documentation](https://github.com/vllm-project/vllm/blob/main/docs/models/supported_models.md). It is extremely fast. (Reference speed: 32B full model, bf16, dual A800 GPUs, under one second per sample)
+* `bench_eval_vllm.py`: A script for evaluation using `vllm` to load models. This is the recommended and more up-to-date script. Only this script supports evaluation of LoRA-fine-tuned models as well as multi-sample voting. It is compatible with most commonly used base models and their fine-tuned variants (e.g., Baichuan-m2). See the [official vllm supported models documentation](https://github.com/vllm-project/vllm/blob/main/docs/models/supported_models.md) for details. It is extremely fast (reference speed: 32B full model, bf16, dual A800 GPUs, under one second per sample).
 
 * `bench_eval_messages.py`: Contains the message format used when the model is executed, i.e., the prompt templates. Also includes functions for parsing model outputs.
 
@@ -96,7 +107,7 @@ PubMedQA 数据集来自 [PubMedQA 官方仓库](https://github.com/pubmedqa/pub
 
 3. **vllm outputs are not strictly reproducible**
 
-   Due to vllm’s internal mechanisms, the same model may not produce identical outputs across runs (even when randomness is disabled), especially when evaluated on multiple GPUs. This behavior is inherent to vllm. Turning off multiprocessing may help, but the current code does not provide such options. Future updates may explore solutions; PRs are welcome.
+   Due to vllm’s internal design, the same model may produce slightly different outputs or evaluation results across different runs (even when various randomness-control methods are applied). This effect is more pronounced when using multiple GPUs. This behavior is inherent to vllm and cannot be completely avoided. It may be partially mitigated by disabling multiprocessing or similar approaches, but such options are not currently provided in this codebase. Contributions and PRs are welcome.
 
 ---
 
@@ -118,22 +129,33 @@ PubMedQA 数据集来自 [PubMedQA 官方仓库](https://github.com/pubmedqa/pub
 
    ```python
    if __name__ == "__main__":
-        eval_pubmedqa(
-        model_path="/nfsdata4/Qwen/Qwen3-32B", # Replace with your local model path/online model name
-        # lora_path="models/sft_Qwen3", # Optional: path to LoRA weights,
-        data_path="dataset/PubMedQA/PQA-L/ori_pqal.json",
-        visible_gpus="2",
-        print_errors=False,
-        record_file=False,
-        max_tokens=32768,
-    )
+      eval_pubmedqa(
+         model_path="/nfsdata4/Qwen/Qwen3-32B", # Replace with your local model path/online model name
+         # lora_path="models/sft_Qwen3", # Optional: path to LoRA weights,
+         data_path="dataset/PubMedQA/PQA-L/ori_pqal.json",
+         visible_gpus="2, 3",
+         max_tokens=32768, # When vote_num > 1, it is recommended to make it smaller, such as 16384.
+         print_errors=False,
+         record_file=False,
+         vote_num=1, # Whether to use multi-response voting
+         temperature=0.6, # Default: 0 if vote_num == 1 else 0.5
+         # top_p=0.95, # Optional
+         # top_k=20, # Optional
+   )
    ```
 
    当前未提供 `argparse` 命令行接口，后续若有需求的人多将会添加，也欢迎提交 PR。
 
 4. **（可选）查看模型全部完整输出**
 
-   在上一步将 `record_file=True` 后，会在基准数据集相同目录下生成 `{原文件名}_eval_{模型名}.jsonl`，其中包含模型的完整生成内容及解析结果。
+   在上一步将 `record_file=True` 后，会在基准数据集所在的同一目录下生成一个文件，其中包含模型的完整生成内容及对应的解析结果。
+
+   具体而言：
+
+   * 当 `vote_num == 1` 时，文件名为
+   `{原文件名}_eval_{模型名}.jsonl`
+   * 当 `vote_num > 1` 时，文件名为
+   `{原文件名}_eval_{模型名}_{vote_num}vote.jsonl`
 
    在此基础上，如果你想重新查看模型的正确率等信息，可以运行 `jasonl_eval.py` 脚本，修改其中的 `path` 为对应文件路径，然后运行脚本即可得到评测结果。
 
@@ -169,7 +191,7 @@ PubMedQA 数据集来自 [PubMedQA 官方仓库](https://github.com/pubmedqa/pub
 
 3. **vllm 输出结果不固定（无严格可复现性）**
 
-   由于 vllm 的自身机制，可能会导致同一模型在不同运行中输出结果 / 评测结果不完全相同（即使设置了各种去随机方法），尤其是在使用多卡进行评测时更为明显。这是 vllm 的设计机制决定的，可能可以通过关闭多进程等方法缓解，但本代码暂未提供相关选项，后续可能会测试，也欢迎 PR。
+   由于 vllm 的自身机制，可能会导致同一模型在不同运行中输出结果 / 评测结果不完全相同（即使设置了各种去随机方法），尤其是在使用多卡进行评测时更为明显。这是 vllm 的设计机制决定的，无可避免。可能可以通过关闭多进程等方法缓解，但本代码暂未提供相关选项，也欢迎 PR。
 
 ---
 
