@@ -157,7 +157,7 @@ PubMedQA 数据集来自 [PubMedQA 官方仓库](https://github.com/pubmedqa/pub
    * 当 `vote_num > 1` 时，文件名为
    `{原文件名}_eval_{模型名}_{vote_num}vote.jsonl`
 
-   在此基础上，如果你想重新查看模型的正确率等信息，可以运行 `jasonl_eval.py` 脚本，修改其中的 `path` 为对应文件路径，然后运行脚本即可得到评测结果。
+   在此基础上，如果你想重新查看模型的正确率等信息，可以运行 `jsonl_eval.py` 脚本，修改其中的 `path` 为对应文件路径，然后运行脚本即可得到评测结果。
 
 
 ### 文件说明：
