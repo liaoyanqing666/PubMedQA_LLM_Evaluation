@@ -164,7 +164,7 @@ PubMedQA 数据集来自 [PubMedQA 官方仓库](https://github.com/pubmedqa/pub
 
 * `bench_eval.py`：使用 `transformers` 加载模型进行评测的脚本。兼容性更强，但速度极慢。（参考速度：32B 全量模型，bf16，A800 双卡，一分钟余一条）
 
-* `bench_eval_vllm.py`：使用 `vllm` 加载模型进行评测的脚本，推荐优先使用此脚本。暂时仅此脚本支持 LoRA 微调模型的评测。兼容绝大部分常用模型及其基础上的微调模型（如 Baichuan-m2），详见 [vllm 官方支持文档](https://github.com/vllm-project/vllm/blob/main/docs/models/supported_models.md)。速度极快。（参考速度：32B 全量模型，bf16，A800 双卡，不到一秒一条）
+* `bench_eval_vllm.py`：使用 `vllm` 加载模型进行评测的脚本，推荐优先使用此脚本，此脚本版本也更加新，仅此脚本支持 LoRA 微调模型的评测和多投票评测。兼容绝大部分常用模型及其基础上的微调模型（如 Baichuan-m2），详见 [vllm 官方支持文档](https://github.com/vllm-project/vllm/blob/main/docs/models/supported_models.md)。速度极快。（参考速度：32B 全量模型，bf16，A800 双卡，不到一秒一条）
 
 * `bench_eval_messages.py`：包含模型实际运行时的 message 格式，即 prompt 模板，也包含解析模型输出结果的函数。
 
